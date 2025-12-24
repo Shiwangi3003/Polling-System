@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Poll Details</title>
+    <style>
+        body {
+            background: #f7f9fa;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            background: #fff;
+            max-width: 500px;
+            margin: 50px auto;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            padding: 32px 24px 24px 24px;
+        }
+
+        h2 {
+            font-size: 2rem;
+            color: #31516C;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #e3e8ee;
+            padding-bottom: 10px;
+        }
+
+        .field {
+            margin-bottom: 18px;
+            font-size: 1.08rem;
+        }
+
+        .label {
+            font-weight: 600;
+            color: #505960;
+        }
+
+        .value {
+            font-weight: 400;
+            color: #353c3f;
+            margin-left: 7px;
+        }
+
+        form {
+            margin-top: 10px;
+        }
+
+        .option {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            font-size: 1rem;
+            color: #427dbd;
+        }
+
+        .option input[type="radio"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        button {
+            margin-top: 18px;
+            background-color: #31516C;
+            color: #fff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #1f3a50;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Poll Details</h2>
+        <div class="field">
+            <span class="label">Poll ID:</span>
+            <span class="value">{{ details["_id"] }}</span>
+        </div>
+        <div class="field">
+            <span class="label">Poll Question:</span>
+            <span class="value">{{ details["question"] }}</span>
+        </div>
+        <form id="pollForm" action="/submit" method="post">
+            <div class="field label" id="ops">Options:</div>
+            <button type="submit">Submit</button>
+        </form>
+        <div class="field" style="margin-top: 30px;">
+            <span class="label">MongoDB _id:</span>
+            <span class="value">{{ details["poll_id"] }}</span>
+        </div>
+    </div>
+    <script>
+        const detailsData = {{ details | tojson | safe }};
+        const x = document.getElementById("ops");
+        let ct = 0;
+
+        (detailsData.options || []).forEach(element => {
+            const wrapper = document.createElement("label");
+            wrapper.className = "option";
+
+            const y = document.createElement("input");
+            y.type = "radio";
+            y.name = "pollOption";
+            y.id = element;
+            y.value = ct;
+            y.required = true;
+
+            wrapper.appendChild(y);
+            wrapper.appendChild(document.createTextNode(" " + element));
+
+            x.appendChild(wrapper);
+            ct++;
+        });
+
+        document.getElementById('pollForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const selectedOption = document.querySelector('input[name="pollOption"]:checked');
+            if (selectedOption) {
+                const data = {
+                    poll_id: detailsData["poll_id"],
+                    pollOption: selectedOption.value
+                };
+
+                try {
+                    const response = await fetch('/submit', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        console.log('Success:', result);
+                        alert('Vote submitted successfully!');
+                    } else {
+                        const errorData = await response.json();
+                        console.error('Error:', errorData);
+                        alert('Error submitting vote: ' + (errorData.detail || response.statusText));
+                    }
+                } catch (error) {
+                    console.error('Network error:', error);
+                    alert('Network error submitting vote.');
+                }
+            } else {
+                alert('Please select an option.');
+            }
+        });
+    </script>
+
+</body>
+
+</html>
