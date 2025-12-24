@@ -18,7 +18,26 @@ def convert_mongo(obj):
 
 
 app=FastAPI()
-templates = Jinja2Templates(directory="views")
+try:
+    templates = Jinja2Templates(directory="views")
+except Exception as _e:
+    templates = None
+    print("Warning: jinja2 must be installed to use template endpoints.\nInstall with: python -m pip install Jinja2\nOr run the app with: uvicorn main:app --reload")
+
+
+@app.get("/", response_class=HTMLResponse)
+def home(req: Request):
+    if templates is None:
+        return JSONResponse(status_code=500, content={
+            "msg": "jinja2 not available. Install with `python -m pip install Jinja2` and run via `uvicorn main:app --reload`."
+        })
+
+    data = collection.find()
+    data = list(data)
+    for i in data:
+        i["_id"] = str(i["_id"])
+
+    return templates.TemplateResponse("home.html", {"request": req, "polls": data})
 
 @app.post("/create_poll")
 def create_poll(req: poll_details):
@@ -73,7 +92,11 @@ def get_poll(req: Request, poll_id: str):
     if res == "Null":
         return JSONResponse(status_code=404, content={"msg":"Poll not found"})
     res = convert_mongo(res)
-    
+    if templates is None:
+        return JSONResponse(status_code=500, content={
+            "msg": "jinja2 not available. Install with `python -m pip install Jinja2` and run via `uvicorn main:app --reload`."
+        })
+
     return templates.TemplateResponse("index.html", {"request": req, "details": res})
 
 
@@ -103,5 +126,9 @@ def get_poll(req: Request, poll_id: str):
     total_count = sum(res["response"])
     for i in range(len(res["response"])):
         res["response"][i] = (res["response"][i] / total_count) * 100 
+    if templates is None:
+        return JSONResponse(status_code=500, content={
+            "msg": "jinja2 not available. Install with `python -m pip install Jinja2` and run via `uvicorn main:app --reload`."
+        })
 
     return templates.TemplateResponse("result.html", {"request": req, "details": res, "totalCount": total_count})
