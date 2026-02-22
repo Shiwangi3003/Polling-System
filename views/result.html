@@ -1,142 +1,320 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Poll Results</title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#4f46e5;}
-    *{box-sizing:border-box}
-    body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial; margin:0; background:linear-gradient(180deg,#071024 0%, #071428 100%); color:#e6eef8; padding:20px}
-    .container{max-width:920px;margin:0 auto}
-    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-    h1{font-size:20px;margin:0;font-weight:700}
-    .meta{color:var(--muted);font-size:13px}
-    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 20px rgba(2,6,23,0.6)}
-    .top{display:flex;gap:18px;align-items:center}
-    .question{flex:1}
-    .summary{text-align:right;min-width:130px}
-    .total{font-weight:600;font-size:17px}
+    :root {
+      --bg: #0f1724;
+      --card: #0b1220;
+      --muted: #9aa4b2;
+      --accent: #4f46e5;
+    }
 
-    .visuals{display:flex;gap:20px;align-items:flex-start;margin-top:14px}
-    @media (max-width:880px){.visuals{flex-direction:column}.summary{text-align:left}}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-    .circles{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
-    .circle-card{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px;border-radius:10px;background:rgba(255,255,255,0.02);min-width:100px}
-    .circle{border-radius:50%;display:flex;align-items:center;justify-content:center;color:#071428;font-weight:700}
-    .label{font-size:13px;color:var(--muted);text-align:center}
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: linear-gradient(180deg, #071024 0%, #071428 100%);
+      color: #e6eef8;
+      padding: 32px 16px;
+      min-height: 100vh;
+    }
 
-    .list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
-    .list-row{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;background:linear-gradient(90deg, rgba(255,255,255,0.02), transparent)}
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
 
-    footer{margin-top:12px;color:var(--muted);font-size:13px}
+    .back-link {
+      display: inline-block;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-bottom: 20px;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: #e6eef8;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .expired-badge {
+      display: inline-block;
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 99px;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 6px 20px rgba(2, 6, 23, 0.6);
+      margin-bottom: 16px;
+    }
+
+    .top {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .question {
+      flex: 1;
+    }
+
+    .question h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .summary {
+      text-align: right;
+      min-width: 130px;
+    }
+
+    .total {
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    /* Bar chart */
+    .bar-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .bar-row {}
+
+    .bar-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+    }
+
+    .bar-label {
+      font-weight: 600;
+      color: #e6eef8;
+    }
+
+    .bar-pct {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .bar-track {
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 99px;
+      height: 12px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Circles (top) */
+    .circles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .circle-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.02);
+      min-width: 90px;
+    }
+
+    .circle {
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #071428;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+
+    footer {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    a.vote-again {
+      display: inline-block;
+      margin-top: 14px;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+
+    a.vote-again:hover {
+      background: #3730a3;
+    }
   </style>
 </head>
+
 <body>
   <div class="container">
+    <a class="back-link" href="/">← Back to all polls</a>
     <header>
       <div>
-        <h1>Poll Results</h1>
-        <div class="meta">Rendered with live data</div>
+        <h1>Poll Results <span id="expiredBadge" style="display:none" class="expired-badge">Closed</span></h1>
+        <div class="meta" id="renderDate"></div>
       </div>
-      <div class="meta">Generated on <span id="renderDate"></span></div>
+      <div class="meta">Poll ID: {{ details["poll_id"] }}</div>
     </header>
 
-    <main class="card">
+    <div class="card">
       <div class="top">
         <div class="question">
-          <h2 id="questionText" style="margin:0;font-size:18px"></h2>
-          <div class="meta" id="questionMeta" style="margin-top:6px"></div>
+          <h2>{{ details["question"] }}</h2>
+          {% if details.expires_at %}
+          <div class="meta" style="margin-top:4px">
+            Expires: {{ details["expires_at"][:16].replace("T"," ") }} UTC
+          </div>
+          {% endif %}
         </div>
         <div class="summary">
-          <div class="total">Total votes: <span id="totalVotes">0</span></div>
-          <div class="meta" id="tinyNote">Circle size represents relative votes</div>
+          <div class="total">Total votes: {{ totalCount }}</div>
+          <div class="meta" style="margin-top:4px">{{ details["options"] | length }} options</div>
         </div>
       </div>
 
-      <div class="visuals">
-        <div style="flex:1">
-          <div class="circles" id="circles"></div>
-          <div class="list" id="optionList" aria-live="polite"></div>
-        </div>
-      </div>
+      <!-- Circles -->
+      <div class="circles" id="circles"></div>
 
-      <footer>Tip: The area of each circle corresponds to the vote count (not the radius) for better visual proportionality.</footer>
-    </main>
+      <!-- Bar chart -->
+      <div class="bar-list" id="barList"></div>
+
+      {% if not details.expired %}
+      <a class="vote-again" href="/polls/{{ details['poll_id'] }}">Vote →</a>
+      {% endif %}
+
+      <footer style="margin-top:18px">Results update in real time. Percentages are rounded to 1 decimal place.</footer>
+    </div>
   </div>
 
   <script>
     const detailsData = {{ details | tojson | safe }};
-    const total_count = {{ totalCount | tojson | safe }};
-    const question = detailsData?.question || 'Untitled poll';
-    const options = Array.isArray(detailsData?.options) ? detailsData.options : [];
-    const responsesRaw = Array.isArray(detailsData?.response) ? detailsData.response : [];
-    const responses = responsesRaw.map(v => Number(v) || 0);
+    const totalCount = {{ totalCount | tojson | safe }};
+    const options = detailsData.options || [];
+    const responses = (detailsData.response || []).map(Number);
 
-    const length = Math.max(options.length, responses.length);
-    while (options.length < length) options.push('Option ' + (options.length+1));
-    while (responses.length < length) responses.push(0);
+    const total = responses.reduce((a, b) => a + b, 0);
+    const percentages = responses.map(v => total ? Math.round((v / total) * 10000) / 100 : 0);
 
-    const total = responses.reduce((a,b)=>a+b,0);
-    const percentages = responses.map(v => total ? Math.round((v/total)*1000)/10 : 0);
+    document.getElementById('renderDate').innerText = 'Generated on ' + new Date().toLocaleString();
 
-    document.getElementById('renderDate').innerText = new Date().toLocaleString();
-    document.getElementById('questionText').innerText = question;
-    document.getElementById('questionMeta').innerText = detailsData?.subtitle || '';
-    document.getElementById('totalVotes').innerText = total_count;
-
-    const circlesEl = document.getElementById('circles');
-    const optionListEl = document.getElementById('optionList');
-
-    const palette = ['#4f46e5','#06b6d4','#10b981','#f59e0b','#ef4444','#8b5cf6','#14b8a6','#fb7185','#f97316','#06b6d4'];
-
-    const maxDiam = 80; 
-    const minDiam = 18;
-    const maxValue = Math.max(...responses, 1);
-
-    function valueToDiameter(val){
-      if (maxValue === 0) return minDiam;
-      const maxArea = Math.PI * Math.pow(maxDiam/2, 2);
-      const area = (val / maxValue) * maxArea;
-      const diam = Math.sqrt((4 * area) / Math.PI);
-      return Math.max(minDiam, Math.round(diam));
+    if (detailsData.expired) {
+      document.getElementById('expiredBadge').style.display = 'inline-block';
     }
 
-    options.forEach((opt, idx) => {
-      const val = responses[idx];
-      const diam = valueToDiameter(val);
-      const color = palette[idx % palette.length];
+    const palette = ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#fb7185', '#f97316', '#06b6d4'];
+    const maxV = Math.max(...responses, 1);
+    const maxD = 80, minD = 18;
 
-      const card = document.createElement('div');
-      card.className = 'circle-card';
+    function toDiam(val) {
+      if (maxV === 0) return minD;
+      const area = (val / maxV) * Math.PI * Math.pow(maxD / 2, 2);
+      return Math.max(minD, Math.round(Math.sqrt((4 * area) / Math.PI)));
+    }
 
-      const circ = document.createElement('div');
-      circ.className = 'circle';
-      circ.setAttribute('role', 'img');
-      circ.setAttribute('aria-label', `${opt}: ${val} votes (${percentages[idx]}%)`);
-      circ.style.width = diam + 'px';
-      circ.style.height = diam + 'px';
-      circ.style.background = color;
-      circ.style.boxShadow = '0 6px 18px rgba(2,6,23,0.6)';
+    const circlesEl = document.getElementById('circles');
+    const barListEl = document.getElementById('barList');
+
+    options.forEach((opt, i) => {
+      const val = responses[i] || 0;
+      const diam = toDiam(val);
+      const color = palette[i % palette.length];
+      const pct = percentages[i];
+
+      // Circle
+      const card = document.createElement('div'); card.className = 'circle-card';
+      const circ = document.createElement('div'); circ.className = 'circle';
+      circ.style.cssText = `width:${diam}px;height:${diam}px;background:${color};box-shadow:0 4px 14px rgba(2,6,23,0.5)`;
+      circ.setAttribute('aria-label', `${opt}: ${val} votes (${pct}%)`);
       circ.innerText = val > 0 && diam > 28 ? val : '';
-
       const lbl = document.createElement('div');
-      lbl.className = 'label';
+      lbl.style.cssText = 'font-size:12px;color:var(--muted);text-align:center;max-width:90px;word-break:break-word';
       lbl.innerText = opt;
-
-      card.appendChild(circ);
-      card.appendChild(lbl);
+      card.append(circ, lbl);
       circlesEl.appendChild(card);
 
-      
-      const row = document.createElement('div');
-      row.className = 'list-row';
-      row.innerHTML = `<div style="display:flex;gap:10px;align-items:center"><div style="width:12px;height:12px;border-radius:50%;background:${color}"></div><div>${opt}</div></div><div class="meta">${percentages[idx]}%</div>`;
-      optionListEl.appendChild(row);
+      // Bar
+      const row = document.createElement('div'); row.className = 'bar-row';
+      row.innerHTML = `
+        <div class="bar-label-row">
+          <span class="bar-label">${opt}</span>
+          <span class="bar-pct">${val} vote${val !== 1 ? 's' : ''} &nbsp; ${pct}%</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:0%;background:${color}" data-pct="${pct}"></div>
+        </div>`;
+      barListEl.appendChild(row);
     });
 
+    // Animate bars after paint
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.bar-fill').forEach(el => {
+        el.style.width = el.dataset.pct + '%';
+      });
+    });
   </script>
 </body>
+
 </html>
