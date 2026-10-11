@@ -1,20 +1,10 @@
-from starlette.datastructures import UploadFile
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, HTMLResponse
 from models import poll_details, update_poll_details
 from uuid import uuid4
 from configuration import collection
+from database.schema import response_parser
 from fastapi.templating import Jinja2Templates
-from bson import ObjectId
-
-def convert_mongo(obj):
-    if isinstance(obj, ObjectId):
-        return str(obj)
-    if isinstance(obj, dict):
-        return {k: convert_mongo(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [convert_mongo(v) for v in obj]
-    return obj
 
 
 app=FastAPI()
@@ -32,10 +22,7 @@ def home(req: Request):
             "msg": "jinja2 not available. Install with `python -m pip install Jinja2` and run via `uvicorn main:app --reload`."
         })
 
-    data = collection.find()
-    data = list(data)
-    for i in data:
-        i["_id"] = str(i["_id"])
+    data = response_parser(collection.find())
 
     return templates.TemplateResponse("home.html", {"request": req, "polls": data})
 
@@ -55,10 +42,7 @@ def create_poll(req: poll_details):
 
 @app.get("/polls")
 def get_all_polls():
-    data = collection.find()
-    data = list(data)
-    for i in data:
-        i["_id"]=str(i["_id"])
+    data = response_parser(collection.find())
     
     return JSONResponse(data)
 
@@ -67,7 +51,7 @@ def get_all_polls():
 def changing_poll(req: update_poll_details):
     req = req.dict()
     res = collection.find_one({"poll_id": req["poll_id"]})
-    if res == "Null":
+    if res is None:
         return JSONResponse(status_code=404, detail="Poll-Id not found")
     else:
         collection.update_one({"poll_id":req["poll_id"]}, {"$set":req})
@@ -78,7 +62,7 @@ def changing_poll(req: update_poll_details):
 @app.delete("/delete_poll/{poll_id}")
 def deleting_poll(poll_id: str):
     res = collection.find_one({"poll_id":poll_id})
-    if res == "Null":
+    if res is None:
         return JSONResponse(status_code=404, content={"msg":"Poll not found"})
     else:
         collection.delete_one({"poll_id":poll_id})
@@ -87,11 +71,12 @@ def deleting_poll(poll_id: str):
 
 
 @app.get("/polls/{poll_id}",response_class = HTMLResponse)
-def get_poll(req: Request, poll_id: str):
+def get_poll(req: Request, poll_id: str):   #why req used here
     res = collection.find_one({"poll_id": poll_id})
-    if res == "Null":
+    if res is None:
         return JSONResponse(status_code=404, content={"msg":"Poll not found"})
-    res = convert_mongo(res)
+    if res:
+        res["_id"] = str(res["_id"])
     if templates is None:
         return JSONResponse(status_code=500, content={
             "msg": "jinja2 not available. Install with `python -m pip install Jinja2` and run via `uvicorn main:app --reload`."
@@ -105,7 +90,7 @@ async def submitResponse(req: update_poll_details):
     req = req.dict()
     pollOption = req["pollOption"];
     res = collection.find_one({"poll_id": req["poll_id"]})
-    if res == "Null":
+    if res is None:
         return JSONResponse(status_code=404, detail="Poll-Id not found")
     else:
         req = res
@@ -118,14 +103,15 @@ async def submitResponse(req: update_poll_details):
 @app.get("/poll/result/{poll_id}",response_class = HTMLResponse)
 def get_poll(req: Request, poll_id: str):
     res = collection.find_one({"poll_id": poll_id})
-    res = convert_mongo(res)
-    
-    if res == "Null":
+    if res is None:
         return JSONResponse(status_code=404, content={"msg":"Poll not found"})
+
+    res["_id"] = str(res["_id"])
     
     total_count = sum(res["response"])
     for i in range(len(res["response"])):
-        res["response"][i] = (res["response"][i] / total_count) * 100 
+        if(total_count >0):
+            res["response"][i] = (res["response"][i] / total_count) * 100
     if templates is None:
         return JSONResponse(status_code=500, content={
             "msg": "jinja2 not available. Install with `python -m pip install Jinja2` and run via `uvicorn main:app --reload`."
