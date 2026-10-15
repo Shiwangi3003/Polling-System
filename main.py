@@ -23,7 +23,11 @@ def home(req: Request):
         })
 
     data = response_parser(collection.find())
-    return templates.TemplateResponse("home.html", {"request": req, "polls": data})
+    return templates.TemplateResponse(
+        request=req,
+        name="home.html",
+        context={"polls": data}
+    )
 
 @app.post("/create_poll")
 def create_poll(req: poll_details):
@@ -84,7 +88,11 @@ def get_poll(req: Request, poll_id: str):
             "msg": "jinja2 not available. Install with `python -m pip install Jinja2` and run via `uvicorn main:app --reload`."
         })
 
-    return templates.TemplateResponse("index.html", {"request": req, "details": res})
+    return templates.TemplateResponse(
+        request=req,
+        name="index.html",
+        context={"details": res}
+    )
 
 
 @app.post("/submit")
@@ -123,4 +131,8 @@ def get_poll(req: Request, poll_id: str):
             "msg": "jinja2 not available. Install with `python -m pip install Jinja2` and run via `uvicorn main:app --reload`."
         })
 
-    return templates.TemplateResponse("result.html", {"request": req, "details": res, "totalCount": total_count})
+    return templates.TemplateResponse(
+        request=req,
+        name="result.html",
+        context={"details": res, "totalCount": total_count}
+    )
