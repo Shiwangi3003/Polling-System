@@ -23,13 +23,13 @@ def home(req: Request):
         })
 
     data = response_parser(collection.find())
-
     return templates.TemplateResponse("home.html", {"request": req, "polls": data})
 
 @app.post("/create_poll")
 def create_poll(req: poll_details):
     req= req.dict()
     req["poll_id"] = str(uuid4())
+    req["response"] = [0] * len(req["options"])
     
     data = collection.find_one({"question": req["question"]})
     if not data:
@@ -53,6 +53,8 @@ def changing_poll(req: update_poll_details):
     res = collection.find_one({"poll_id": req["poll_id"]})
     if res is None:
         return JSONResponse(status_code=404, detail="Poll-Id not found")
+    if len(req["options"]) != len(req["response"]):
+        return JSONResponse(status_code=400, content={"msg": "Each poll option must have a response count"})
     else:
         collection.update_one({"poll_id":req["poll_id"]}, {"$set":req})
     
@@ -71,7 +73,7 @@ def deleting_poll(poll_id: str):
 
 
 @app.get("/polls/{poll_id}",response_class = HTMLResponse)
-def get_poll(req: Request, poll_id: str):   #why req used here
+def get_poll(req: Request, poll_id: str):
     res = collection.find_one({"poll_id": poll_id})
     if res is None:
         return JSONResponse(status_code=404, content={"msg":"Poll not found"})
@@ -92,12 +94,16 @@ async def submitResponse(req: update_poll_details):
     res = collection.find_one({"poll_id": req["poll_id"]})
     if res is None:
         return JSONResponse(status_code=404, detail="Poll-Id not found")
+    elif not (0 <= pollOption < len(res["options"])):
+        return JSONResponse(status_code=400, content={"msg": "Poll-Option not found"})
+    elif len(res["options"]) != len(res["response"]):
+        return JSONResponse(status_code=400, content={"msg": "Poll options and response counts are inconsistent"})
     else:
         req = res
         req["response"][pollOption]+=1
         collection.update_one({"poll_id":req["poll_id"]}, {"$set":req})
     
-    return JSONResponse(status_code=200,content={"msg": "Event updated successfully"})
+    return JSONResponse(status_code=200, content={"msg": "Event updated successfully"})
 
 
 @app.get("/poll/result/{poll_id}",response_class = HTMLResponse)

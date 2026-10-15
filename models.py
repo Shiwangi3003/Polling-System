@@ -12,3 +12,5 @@ class update_poll_details(BaseModel):
     options: list=[]
     response: list=[]
     pollOption: int
+
+#I would validate for duplicate option labels or use unique option IDs.
